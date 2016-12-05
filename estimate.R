@@ -3,6 +3,8 @@ parameters <- read.table("regional-parameters.csv", header=TRUE, row.names=1, se
 regions <- row.names(parameters)
 scenarios <- names(yieldFactors)[2:12]
 practices <- c("np", names(parameters[1:3]))
+plantings <- c(1,2,3,4)
+
 yieldProfiles <- array(dim=c(26,11,5), dimnames=list(yieldFactors$age,scenarios,regions))
 costProfiles <- array(dim=c(26,11,4,5), dimnames=list(yieldFactors$age,scenarios,practices,regions))
 netReturns <- array(dim=c(26,11,4,5), dimnames=list(yieldFactors$age,scenarios,practices,regions))
@@ -26,7 +28,7 @@ for (reg in regions) {
   for (sce in scenarios) {
     for (prac in practices) {
       for (year in 1:26) {
-        costProfiles[year,sce,prac,reg] = parameters[reg,ifelse(year-1<4,paste("cost", year-1, sep=""),"cost3")] - ifelse(prac=="np" | sce=="healthy" | sce=="infected", 0, ifelse(year-1<as.numeric(substr(sce,5,nchar(sce))),0,parameters[reg,prac]))
+        costProfiles[year,sce,prac,reg] = parameters[reg,ifelse(year-1<4,paste("cost", year-1, sep=""),"cost3")] + ifelse(prac=="np" | sce=="healthy" | sce=="infected", 0, ifelse(year-1<as.numeric(substr(sce,5,nchar(sce))),0,parameters[reg,prac]))
       }
     }
   }
@@ -66,3 +68,59 @@ for (reg in regions) {
   }
 }
 
+horizon <- 51
+cycleLengths <- array(dim=c(10,4,5), dimnames=list(scenarios[2:11],practices,regions))
+shortCycleLengths <- array(dim=c(10,4,5), dimnames=list(scenarios[2:11],practices,regions))
+cycleStarts <- array(dim=c(4,10,4,5), dimnames=list(plantings,scenarios[2:11],practices,regions))
+cycleEnds <- array(dim=c(4,10,4,5), dimnames=list(plantings,scenarios[2:11],practices,regions))
+
+# identify cycle length for each region, for each scenario, for each practice as year where cumDNR falls below prev. year, unless we get to year 26
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      year <- 5
+      while (cumDNR[year,sce,prac,reg]>=cumDNR[year-1,sce,prac,reg] & year<26) {
+        year <- year + 1
+      }
+      cycleLengths[sce,prac,reg] <- year-1
+    }
+  }
+}
+
+# generate list of cycle start years for each region, scenario, practice
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      cycleStarts[1,sce,prac,reg] <- 0
+      cycle <- 2
+      while (cycleStarts[cycle-1,sce,prac,reg] + cycleLengths[sce,prac,reg] < 50) {
+        cycleStarts[cycle,sce,prac,reg] <- cycleStarts[cycle-1,sce,prac,reg] + cycleLengths[sce,prac,reg] + 1
+        cycle <- cycle + 1
+      }
+    }
+  }
+}
+
+# generate list of cycle end years for each region, scenario, practice
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      cycleEnds[1,sce,prac,reg] <- cycleLengths[sce,prac,reg]
+      cycle <- 2
+      while (cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg] < 50) {
+        cycleEnds[cycle,sce,prac,reg] <- cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg]
+        cycle <- cycle + 1
+      }
+      if(cycleEnds[cycle-1,sce,prac,reg]!=50) cycleEnds[cycle,sce,prac,reg] <- 50
+    }
+  }
+}
+
+# generate lengths of last (incomplete/short) cycles, by region, scenario, practice
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      ifelse(cycleEnds[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] - cycleStarts[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] != cycleLengths[sce,prac,reg], shortCycleLengths[sce,prac,reg] <- cycleEnds[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] - cycleStarts[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg], shortCycleLengths[sce,prac,reg] <- NA)
+    }
+  }
+}
