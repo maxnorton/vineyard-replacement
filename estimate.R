@@ -93,7 +93,7 @@ for (reg in regions) {
     for (prac in practices) {
       cycleStarts[1,sce,prac,reg] <- 0
       cycle <- 2
-      while (cycleStarts[cycle-1,sce,prac,reg] + cycleLengths[sce,prac,reg] < 50) {
+      while (cycleStarts[cycle-1,sce,prac,reg] + cycleLengths[sce,prac,reg] + 1 < 50) {
         cycleStarts[cycle,sce,prac,reg] <- cycleStarts[cycle-1,sce,prac,reg] + cycleLengths[sce,prac,reg] + 1
         cycle <- cycle + 1
       }
@@ -106,10 +106,8 @@ for (reg in regions) {
   for (sce in scenarios[2:11]) {
     for (prac in practices) {
       cycleEnds[1,sce,prac,reg] <- cycleLengths[sce,prac,reg]
-      cycle <- 2
-      while (cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg] < 50) {
-        cycleEnds[cycle,sce,prac,reg] <- cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg]
-        cycle <- cycle + 1
+      for (cycle in 2:sum(!is.na(cycleStarts[,sce,prac,reg]))) {
+        if (cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg] < 50) cycleEnds[cycle,sce,prac,reg] <- cycleStarts[cycle,sce,prac,reg] + cycleLengths[sce,prac,reg]
       }
       if(cycleEnds[cycle-1,sce,prac,reg]!=50) cycleEnds[cycle,sce,prac,reg] <- 50
     }
@@ -121,6 +119,42 @@ for (reg in regions) {
   for (sce in scenarios[2:11]) {
     for (prac in practices) {
       ifelse(cycleEnds[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] - cycleStarts[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] != cycleLengths[sce,prac,reg], shortCycleLengths[sce,prac,reg] <- cycleEnds[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] - cycleStarts[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg], shortCycleLengths[sce,prac,reg] <- NA)
+    }
+  }
+}
+
+cycleCNRs <- array(dim=c(4,10,4,5), dimnames=list(plantings,scenarios[2:11],practices,regions))
+cycleDCNRs <- array(dim=c(4,10,4,5), dimnames=list(plantings,scenarios[2:11],practices,regions))
+totalDNRs <- array(dim=c(10,4,5), dimnames=list(scenarios[2:11],practices,regions))
+
+# compile net returns for each cycle, by region, scenario, practice
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      for (cycle in 1:sum(!is.na(cycleEnds[,sce,prac,reg]))) {
+        cycleCNRs[cycle,sce,prac,reg] <- cumDNR[cycleLengths[sce,prac,reg]+1,sce,prac,reg]
+      }
+      if (!is.na(shortCycleLengths[sce,prac,reg])) cycleCNRs[sum(!is.na(cycleEnds[,sce,prac,reg])),sce,prac,reg] <- max(cumDNR[shortCycleLengths[sce,prac,reg]+1,sce,prac,reg],0)
+    }
+  }
+}
+
+# discount cycle net returns, by cycle, region, scenario, practice -- again, discount rate hard-coded
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      for (cycle in 1:sum(!is.na(cycleEnds[,sce,prac,reg]))) {
+        cycleDCNRs[cycle,sce,prac,reg] <- cycleCNRs[cycle,sce,prac,reg]/(1.03^cycleStarts[cycle,sce,prac,reg])
+      }
+    }
+  }
+}
+
+# sum them up and we have TDNR -- by region, scenario, practice
+for (reg in regions) {
+  for (sce in scenarios[2:11]) {
+    for (prac in practices) {
+      totalDNRs[sce,prac,reg] = sum(cycleDCNRs[1:4,sce,prac,reg], na.rm=TRUE)
     }
   }
 }
