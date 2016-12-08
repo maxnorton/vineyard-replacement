@@ -11,10 +11,10 @@ produce <- function(yr,prac,reg,precalc) {
   
   for (i in c(1,9,17)) {
     efficacy <- switch(as.character(i), "1"="50", "9"="25", "17"="75")
-    sce <- paste("e", efficacy, "y", as.character(yr), sep="")
+    sce <- ifelse(prac=="np","infected",paste("e", efficacy, "y", as.character(yr), sep=""))
     
     output[i,1] <- "Scenario: Replace after first year of negative returns"
-    output[i+1,1] <- paste("Preventative practice: ",practiceName, " ", "Y", as.character(yr), efficacy, "% DCE", sep="")
+    output[i+1,1] <- paste("Preventative practice: ",ifelse(prac=="np","none",paste(practiceName, " ", "Y", as.character(yr), efficacy, "% DCE", sep="")), sep="")
     output[i+2,1] <- paste("Variety: Cabernet Sauvignon, ", regionName, sep="")
     output[i,3] <- "Replace after year"
     output[i+1,3] <- cycleLengths[sce,prac,reg]
@@ -33,7 +33,7 @@ produce <- function(yr,prac,reg,precalc) {
     }
     output[i+5,3] <- "LCNR disc to year 0"
     for (cycle in 1:sum(!is.na(cycleDCNRs[,sce,prac,reg]))) {
-      output[i+5,3+cycle] <- ifelse(precalc, cycleDCNRs[cycle,sce,prac,reg], paste("=",column(3+cycle),baseRow+i+5-1,"/(1+assumptions$B$1)^",column(3+cycle),baseRow+i+5-3,sep=""))
+      output[i+5,3+cycle] <- ifelse(precalc, cycleDCNRs[cycle,sce,prac,reg], paste("=",column(3+cycle),baseRow+i+5-1,"/(1+assumptions!$B$1)^",column(3+cycle),baseRow+i+5-3,sep=""))
     }
     output[i+2,8] <- "final lifecycle length"
     output[i+3,8] <- ifelse(precalc, ifelse(!is.na(shortCycleLengths[sce,prac,reg]), shortCycleLengths[sce,prac,reg], cycleLengths[sce,prac,reg]), paste("=",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3,"-",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3-1,sep=""))
