@@ -5,6 +5,6 @@ for (reg in regions) {
       write.xlsx(theseresults, paste(reg,yr,prac,".xlsx",sep=""))
     }
   }
-  #theseresults <- produce(0,"np",reg,FALSE)
-  #write.xlsx(theseresults, paste(reg,"-infected.xlsx",sep=""))
+  theseresults <- produceInfected(reg,FALSE)
+  write.xlsx(theseresults, paste(reg,"-infected.xlsx",sep=""))
 }

@@ -25,7 +25,7 @@ produce <- function(yr,prac,reg,precalc) {
     }
     output[i+3,3] <- "Lifecycle end year"
     for (cycle in 1:sum(!is.na(cycleEnds[,sce,prac,reg]))) {
-      output[i+3,3+cycle] <- ifelse(precalc, cycleEnds[cycle,sce,prac,reg], paste("=IF(",column(3+cycle),baseRow+i+3-1,"+$C",baseRow+i+1,", ",column(3+cycle),baseRow+i+3-1,"+$C",baseRow+i+1, ", 50)",sep=""))
+      output[i+3,3+cycle] <- ifelse(precalc, cycleEnds[cycle,sce,prac,reg], paste("=IF(",column(3+cycle),baseRow+i+3-1,"+$C",baseRow+i+1,"<50, ",column(3+cycle),baseRow+i+3-1,"+$C",baseRow+i+1, ", 50)",sep=""))
     }
     output[i+4,3] <- "Lifecycle CNR disc to lifecycle BY"
     for (cycle in 1:sum(!is.na(cycleCNRs[,sce,prac,reg]))) {
@@ -38,8 +38,44 @@ produce <- function(yr,prac,reg,precalc) {
     output[i+2,8] <- "final lifecycle length"
     output[i+3,8] <- ifelse(precalc, ifelse(!is.na(shortCycleLengths[sce,prac,reg]), shortCycleLengths[sce,prac,reg], cycleLengths[sce,prac,reg]), paste("=",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3,"-",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3-1,sep=""))
     output[i+4,8] <- "Total discounted net returns:"
-    #output[i+5,8] <- ifelse(precalc, GET totalDNRs, "=SUM(DROW:FROW)")
     output[i+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+i+5,":F",baseRow+i+5,")",sep=""))
   }
+  return(output)
+}
+
+produceInfected <- function(reg,precalc) {
+  output <- data.frame(matrix(" ", nrow=6, ncol=8), stringsAsFactors=FALSE)
+  regionName <- switch(reg, "napa"="Napa (4)", "nsj"="Northern San Joaquin (11)", "cc"="San Luis Obispo (8)", "lake"="Lake (2)", "son"="Sonoma (3)")
+  baseRow <- switch(reg, "napa"=8, "nsj"=16, "cc"=24, "lake"=32, "son"=40)
+  sce <- "infected"
+  prac <- "np"
+  
+  output[1,1] <- "Scenario: Replace after first year of negative returns"
+  output[1+1,1] <- "Preventative practice: none"
+  output[1+2,1] <- paste("Variety: Cabernet Sauvignon, ", regionName, sep="")
+  output[1,3] <- "Replace after year"
+  output[1+1,3] <- cycleLengths[sce,prac,reg]
+  output[1+2,3] <- "Lifecycle start year (discount base)"
+  output[1+2,4] <- "0"
+  for (cycle in 2:sum(!is.na(cycleStarts[,sce,prac,reg]))) {
+    output[1+2,3+cycle] <- ifelse(precalc, cycleStarts[cycle,sce,prac,reg], paste("=",column(3+cycle-1),baseRow+1+2+1,"+1",sep=""))
+  }
+  output[1+3,3] <- "Lifecycle end year"
+  for (cycle in 1:sum(!is.na(cycleEnds[,sce,prac,reg]))) {
+    output[1+3,3+cycle] <- ifelse(precalc, cycleEnds[cycle,sce,prac,reg], paste("=IF(",column(3+cycle),baseRow+1+3-1,"+$C",baseRow+1+1,"<50, ",column(3+cycle),baseRow+1+3-1,"+$C",baseRow+1+1, ", 50)",sep=""))
+  }
+  output[1+4,3] <- "Lifecycle CNR disc to lifecycle BY"
+  for (cycle in 1:sum(!is.na(cycleCNRs[,sce,prac,reg]))) {
+    output[1+4,3+cycle] <- cycleCNRs[cycle,sce,prac,reg]
+  }
+  output[1+5,3] <- "LCNR disc to year 0"
+  for (cycle in 1:sum(!is.na(cycleDCNRs[,sce,prac,reg]))) {
+    output[1+5,3+cycle] <- ifelse(precalc, cycleDCNRs[cycle,sce,prac,reg], paste("=",column(3+cycle),baseRow+1+5-1,"/(1+assumptions!$B$1)^",column(3+cycle),baseRow+1+5-3,sep=""))
+  }
+  output[1+2,8] <- "final lifecycle length"
+  output[1+3,8] <- ifelse(precalc, ifelse(!is.na(shortCycleLengths[sce,prac,reg]), shortCycleLengths[sce,prac,reg], cycleLengths[sce,prac,reg]), paste("=",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+1+3,"-",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+1+3-1,sep=""))
+  output[1+4,8] <- "Total discounted net returns:"
+  output[1+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+1+5,":F",baseRow+1+5,")",sep=""))
+
   return(output)
 }
