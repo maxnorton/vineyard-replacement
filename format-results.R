@@ -38,7 +38,7 @@ produce <- function(yr,prac,reg,precalc) {
     output[i+2,8] <- "final lifecycle length"
     output[i+3,8] <- ifelse(precalc, ifelse(!is.na(shortCycleLengths[sce,prac,reg]), shortCycleLengths[sce,prac,reg], cycleLengths[sce,prac,reg]), paste("=",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3,"-",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+i+3-1,sep=""))
     output[i+4,8] <- "Total discounted net returns:"
-    output[i+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+i+5,":F",baseRow+i+5,")",sep=""))
+    output[i+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+i+5,":G",baseRow+i+5,")",sep=""))
   }
   return(output)
 }
@@ -75,7 +75,7 @@ produceInfected <- function(reg,precalc) {
   output[1+2,8] <- "final lifecycle length"
   output[1+3,8] <- ifelse(precalc, ifelse(!is.na(shortCycleLengths[sce,prac,reg]), shortCycleLengths[sce,prac,reg], cycleLengths[sce,prac,reg]), paste("=",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+1+3,"-",column(3+sum(!is.na(cycleStarts[,sce,prac,reg]))),baseRow+1+3-1,sep=""))
   output[1+4,8] <- "Total discounted net returns:"
-  output[1+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+1+5,":F",baseRow+1+5,")",sep=""))
+  output[1+5,8] <- ifelse(precalc, totalDNRs[sce,prac,reg], paste("=SUM(D",baseRow+1+5,":G",baseRow+1+5,")",sep=""))
 
   return(output)
 }
