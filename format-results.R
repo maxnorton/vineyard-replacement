@@ -11,10 +11,10 @@ produce <- function(yr,prac,reg,precalc) {
   
   for (i in c(1,9,17)) {
     efficacy <- switch(as.character(i), "1"="50", "9"="25", "17"="75")
-    sce <- ifelse(prac=="np","infected",paste("e", efficacy, "y", as.character(yr), sep=""))
+    sce <- paste("e", efficacy, "y", as.character(yr), sep="")
     
     output[i,1] <- "Scenario: Replace after first year of negative returns"
-    output[i+1,1] <- paste("Preventative practice: ",ifelse(prac=="np","none",paste(practiceName, " ", "Y", as.character(yr), efficacy, "% DCE", sep="")), sep="")
+    output[i+1,1] <- paste("Preventative practice: ",practiceName, " ", "Y", as.character(yr), efficacy, "% DCE", sep="")
     output[i+2,1] <- paste("Variety: Cabernet Sauvignon, ", regionName, sep="")
     output[i,3] <- "Replace after year"
     output[i+1,3] <- cycleLengths[sce,prac,reg]
